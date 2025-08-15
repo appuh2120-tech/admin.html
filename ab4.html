@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Orders Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        h1 { text-align: center; }
+        .order { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 6px 12px; border: none; cursor: pointer; margin-right: 5px; border-radius: 4px; }
+        .del { background: crimson; color: white; }
+        .status { background: seagreen; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>📦 Orders Dashboard</h1>
+<div id="ordersList"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+<script>
+    // Firebase Config (ಇಲ್ಲಿ ನಿನ್ನ keys ಹಾಕು)
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function loadOrders() {
+        document.getElementById("ordersList").innerHTML = "";
+        db.collection("orders").orderBy("date", "desc").get().then(snapshot => {
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                let id = doc.id;
+                let html = `<div class="order">
+                    <strong>${data.customerName}</strong> (${data.customerAddress})<br>
+                    Items: ${data.cart.map(i => i.name + " - ₹" + i.price).join(", ")}<br>
+                    Status: ${data.status || "Pending"}<br><br>
+                    <button class="status" onclick="updateStatus('${id}')">Mark as Shipped</button>
+                    <button class="del" onclick="deleteOrder('${id}')">Delete</button>
+                </div>`;
+                document.getElementById("ordersList").innerHTML += html;
+            });
+        });
+    }
+
+    function updateStatus(id) {
+        db.collection("orders").doc(id).update({ status: "Shipped" }).then(() => {
+            alert("✅ Status Updated");
+            loadOrders();
+        });
+    }
+
+    function deleteOrder(id) {
+        if (confirm("Delete this order?")) {
+            db.collection("orders").doc(id).delete().then(() => {
+                alert("🗑 Order Deleted");
+                loadOrders();
+            });
+        }
+    }
+
+    loadOrders();
+</script>
+
+</body>
+</html>
